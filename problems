@@ -1,0 +1,97 @@
+ok lets us go at it once agation problem , the car is not moving to recap 1.section first child ground(quad) position 0,0,0 roratoin 90,0,0 ,scale 50,26,1 components Quad(mes filter) ,Mesh Rendered,Mesh Collider .Child Road 0,0,0: 0,0,0 ,1,1,1 componensts road(mesh filter) ,Mesh Rendered which has multiple child of road  2.Car componensts Transform 3.68,-0.74.0.77 rotaton 0,0,0 and scale 1,1,1 :Rigidbody mass 1 ,linear damping 0 angular damping 0.05 ,InputHander,Car Handler, child Model transfer 0,0,0: 0,0,0 scale 1,1,1, child car_sedan transform 0,0.056,0: rotation 0,0,0 scale 1,1,1: car_sedan Mesh filter: Mesh_renderer:Mesh collider the scrips as follows :using System;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class CarHandler : MonoBehaviour
+{
+   [SerializeField]
+    private Rigidbody rb;
+    public float moveSpeed = 10f;
+    public float turnSpeed = 50f;
+
+    Vector2 input = Vector2.zero;
+    float accelerationMultiplier = 3;
+    float breakMultiplier = 15;
+    float steeringMultiplier = 5;
+
+    void Start()
+    {
+    //    rb = GetComponent<Rigidbody>(); // Don't forget to get the Rigidbody component/
+// transform.position = new Vector3(0, 0.5f, 0);
+    }
+
+    void Update()
+    {
+        // Input handling can be moved here if needed
+    }
+
+    void FixedUpdate()
+    {
+        if (input.y > 0)
+            Accelerate();
+        else
+            rb.linearDamping = 0.2f; // Changed from linearDamping to drag (more standard)
+            
+        if (input.y < 0)
+            Brake();
+            
+        Steer();
+    }
+
+    void Steer()
+    {
+        if (Mathf.Abs(input.x) > 0)
+        {
+            // Apply torque for steering instead of direct force
+            rb.AddTorque(transform.up * steeringMultiplier * input.x, ForceMode.Force);
+        }
+    }
+
+    void Brake()
+    {
+       // if (rb.linearVelocity.magnitude <= 0) // Changed to check magnitude instead //of z component
+         //   return;
+
+
+if(rb.linearVelocity.z<=0)
+ return;
+            
+        rb.AddForce(rb.linearVelocity.normalized * breakMultiplier * Mathf.Abs(input.y));
+    }
+
+    void Accelerate()
+    {
+        rb.linearDamping = 0; // Changed from linearDamping to drag
+        rb.AddForce(rb.transform.forward * accelerationMultiplier * input.y, ForceMode.Force);
+    }
+
+    public void SetInput(Vector2 inputVector)
+    {
+        inputVector.Normalize();
+        input = inputVector;
+    }
+} and using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement; // Fixed namespace
+
+public class InputHandler : MonoBehaviour
+{
+    [SerializeField]
+    CarHandler carHandler;
+
+    void Update()
+    {
+        Vector2 input = Vector2.zero;
+
+        input.x = Input.GetAxis("Horizontal"); // Fixed string literals with quotes
+        input.y = Input.GetAxis("Vertical");   // Changed to input.y for vertical axis
+
+        carHandler.SetInput(input);
+
+        if (Input.GetKeyDown(KeyCode.R)) // Fixed Input class and removed extra parenthesis
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+}
