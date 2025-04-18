@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
  
 
-public class EndlessSectionHandler : MonoBehaviour
+public class EndlessSectionHandler: MonoBehaviour
 {
     Transform playerCarTransform;
     
@@ -33,13 +33,13 @@ public class EndlessSectionHandler : MonoBehaviour
 
         // Interpolate section's y-position
         transform.position = Vector3.Lerp(
-            new Vector3(transform.position.x, -10, transform.position.z),
+            new Vector3(transform.position.x, 0, transform.position.z),
             new Vector3(transform.position.x, 0, transform.position.z),
             lerpPercentage);
     }
 }
-/*
-public class EndlessSectionHandler : MonoBehaviour
+ 
+public class EndlessSectionHandlerss : MonoBehaviour
 {
    Transform playerCarTransform;
    void Start()
@@ -57,9 +57,9 @@ public class EndlessSectionHandler : MonoBehaviour
   transform.position = Vector3.Lerp(new Vector3(transform.position.x, -10, transform.position.z), new Vector3(transform.position.x, 0, transform.position.z), lerpPercentage);
    }
 }
-*/
-/*
-public class EndlessSectionHandler : MonoBehaviour
+ 
+ 
+public class EndlessSectionHandlerSSS : MonoBehaviour
 {
    Transform playerCarTransform;
    void Start()
@@ -74,7 +74,7 @@ public class EndlessSectionHandler : MonoBehaviour
       float lerpPercentage = 1.0f - ((distanceToPlayer - 100) / 150.0f);
    lerpPercentage = Mathf.Clamp01(lerpPercentage);
 
-  transform.position = Vector3.Lerp(new Vector3(transform.position.x, -10, transform.position.z), new Vector3(transform.position.x, 0, transform.position.z), lerpPercentage);
+  transform.position = Vector3.Lerp(new Vector3(transform.position.x, -5, transform.position.z), new Vector3(transform.position.x, 0, transform.position.z), lerpPercentage);
    }
 }
-*/
+ 
