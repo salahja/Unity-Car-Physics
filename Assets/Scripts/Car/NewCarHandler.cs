@@ -10,13 +10,13 @@ public class NewCarHandler : MonoBehaviour
     [SerializeField] private Transform rearRightWheel;
     [SerializeField] private Transform rearLeftWheel;
 
-   [Header("Wheel Colliders")]
+    [Header("Wheel Colliders")]
     [SerializeField] private WheelCollider frontRightCollider;
     [SerializeField] private WheelCollider frontLeftCollider;
     [SerializeField] private WheelCollider rearRightCollider;
     [SerializeField] private WheelCollider rearLeftCollider;
 
-    [Header("Movement Settings")]
+    [Header("Movement Settings - Wheel Collider Based")]
     public float maxMotorTorque = 500f;
     public float maxBrakeTorque = 1000f;
     public float maxSteeringAngle = 30f;
@@ -27,8 +27,7 @@ public class NewCarHandler : MonoBehaviour
     private float inputHorizontal;
     private bool isBraking;
 
-
-    [Header("Movement Settings")]
+    [Header("Movement Settings - Force Based (Redundant with Wheel Colliders)")]
     public float moveSpeed = 10f;
     public float reverseSpeed = 5f;
     public float accelerationMultiplier = 3f;
@@ -39,7 +38,6 @@ public class NewCarHandler : MonoBehaviour
 
     [Header("Steering Settings")]
     public float steeringMultiplier = 2f;
- 
     public float minSteeringSpeed = 5f;
     public float maxSteeringSpeed = 30f;
     [SerializeField] float steeringLerpSpeed = 5f;
@@ -62,12 +60,14 @@ public class NewCarHandler : MonoBehaviour
     private bool isCrashed = false;
     private float crashTimer = 0f;
     private float crashDuration = 3f;
-[Header("Audio Settings")]
-[SerializeField] private float minEnginePitch = 0.5f;
-[SerializeField] private float maxEnginePitch = 2.0f;
-[SerializeField] private float engineSoundFadeSpeed = 2.0f;
-[SerializeField] private float minRPMForSound = 100f;
-    [Header("Audio Settings")]
+
+    [Header("Audio Settings - Engine")]
+    [SerializeField] private float minEnginePitch = 0.5f;
+    [SerializeField] private float maxEnginePitch = 2.0f;
+    [SerializeField] private float engineSoundFadeSpeed = 2.0f;
+    [SerializeField] private float minRPMForSound = 100f;
+
+    [Header("Audio Settings - Other")]
     [SerializeField] AudioSource carEngineAS;
     [SerializeField] AudioSource carReverseAS;
     [SerializeField] AudioSource carSkidAS;
@@ -83,19 +83,32 @@ public class NewCarHandler : MonoBehaviour
     private Vector2 input = Vector2.zero;
     private bool isPlayer = true;
 
-    // Emissive property (if carMeshRender is still needed for visual effects)
     [Header("Visual Settings")]
     [SerializeField] private MeshRenderer carMeshRender;
     private int _EmissionColor = Shader.PropertyToID("_EmissionColor");
     private Color emissiveColor = Color.white;
     private float emissiveColorMultiplier = 0f;
 
+    [Header("Coin Detection")]
+    [SerializeField] private BoxCollider coinTriggerCollider;
+
     void Start()
     {
-          rb = GetComponent<Rigidbody>();
-    rb.isKinematic = false; // ← Critical for physics-based movement
- 
-        if (rb == null)
+        if (coinTriggerCollider != null)
+        {
+            coinTriggerCollider.isTrigger = true;
+        }
+        else
+        {
+            Debug.LogError("Assign the Body's BoxCollider as Coin Trigger in Inspector!");
+        }
+
+        rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false; // Ensure Rigidbody is not kinematic for physics-based movement
+        }
+        else
         {
             Debug.LogError("Rigidbody component not found on this GameObject.");
             enabled = false;
@@ -112,84 +125,43 @@ public class NewCarHandler : MonoBehaviour
             if (carCrashAS != null) carCrashAS.loop = false;
         }
     }
-   void Update()
-    {
-        //GetInput();
-        UpdateWheelPoses();
-    }
-
-  void FixedUpdate()
-    {
-        HandleMovement();
-        HandleSteering();
-        UpdateCarAudio();
-    }  
-  
-public void SetInput(Vector2 input)
-{
-        if (isCrashed) return;
-        input = Vector2.ClampMagnitude(input, 1f);
-    inputHorizontal = input.x;
-    inputVertical = input.y;
-    // braking will be handled separately if needed
-}
-
-public void SetBraking(bool braking)
-{
-    isBraking = braking;
-}
-/*
 
     void Update()
     {
-        if (isCrashed)
-        {
-            crashTimer += Time.deltaTime;
-            if (crashTimer >= crashDuration)
-            {
-                RecoverFromCrash();
-            }
-            return;
-        }
-
+        UpdateWheelPoses();
         CheckGrounded();
-        HandleJumpInput();
-
-        if (carMeshRender != null)
-        {
-            float desiredCarEmissiveColorMultiplier = 0f;
-            if (input.y < 0)
-                desiredCarEmissiveColorMultiplier = 4.0f;
-
-            emissiveColorMultiplier = Mathf.Lerp(emissiveColorMultiplier, desiredCarEmissiveColorMultiplier, Time.deltaTime * 4);
-            carMeshRender.material.SetColor(_EmissionColor, emissiveColor * emissiveColorMultiplier);
-        }
-        UpdateCarAudio();
     }
 
     void FixedUpdate()
     {
-        if (isCrashed)
-        {
-            rb.linearDamping = crashDrag;
-            FadeOutCarAudio();
-            return;
-        }
-
         HandleMovement();
         HandleSteering();
+        UpdateCarAudio();
     }
 
-*/
+    public void SetInput(Vector2 inputVector)
+    {
+        if (isCrashed) return;
+        input = Vector2.ClampMagnitude(inputVector, 1f);
+        inputHorizontal = input.x;
+        inputVertical = input.y;
+        // Braking will be handled separately if needed
+    }
+
+    public void SetBraking(bool braking)
+    {
+        isBraking = braking;
+    }
+
     void CheckGrounded()
     {
         // Check if any of the wheel colliders are touching the ground
-        isGrounded = frontRightCollider.bounds.Intersects(GetGroundBounds()) ||
-                     frontLeftCollider.bounds.Intersects(GetGroundBounds()) ||
-                     rearRightCollider.bounds.Intersects(GetGroundBounds()) ||
-                     rearLeftCollider.bounds.Intersects(GetGroundBounds());
+        isGrounded = frontRightCollider.isGrounded ||
+                     frontLeftCollider.isGrounded ||
+                     rearRightCollider.isGrounded ||
+                     rearLeftCollider.isGrounded;
 
-        if (isGrounded && isJumping && rb.linearVelocity.y <= 0)
+        if (isGrounded && isJumping && rb.linearVelocity.y <= 0) // Use rb.velocity for Rigidbody
         {
             isJumping = false;
         }
@@ -197,8 +169,8 @@ public void SetBraking(bool braking)
 
     private Bounds GetGroundBounds()
     {
-        // You might need a more sophisticated way to determine the ground bounds
-        // based on your environment. This is a simple approach using a layer mask.
+        // This function is not used when checking WheelCollider.isGrounded
+        // Consider removing it or using WheelCollider.GetGroundHit() for more info
         Collider[] groundColliders = Physics.OverlapSphere(transform.position - Vector3.up * groundCheckDistance, 0.1f, groundLayer);
         if (groundColliders.Length > 0)
         {
@@ -211,7 +183,6 @@ public void SetBraking(bool braking)
         }
         return new Bounds(transform.position - Vector3.up * groundCheckDistance, Vector3.zero);
     }
-
 
     void HandleJumpInput()
     {
@@ -233,7 +204,8 @@ public void SetBraking(bool braking)
 
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         isJumping = true;
-    } 
+    }
+
     void HandleMovement()
     {
         currentSpeed = rb.linearVelocity.magnitude * 3.6f; // Convert to km/h
@@ -257,7 +229,8 @@ public void SetBraking(bool braking)
         rearRightCollider.brakeTorque = brakeTorque;
         rearLeftCollider.brakeTorque = brakeTorque;
     }
-  void HandleSteering()
+
+    void HandleSteering()
     {
         float steeringAngle = maxSteeringAngle * inputHorizontal;
         frontRightCollider.steerAngle = steeringAngle;
@@ -271,32 +244,42 @@ public void SetBraking(bool braking)
         UpdateWheelPose(rearRightCollider, rearRightWheel);
         UpdateWheelPose(rearLeftCollider, rearLeftWheel);
     }
-void UpdateWheelPose(WheelCollider collider, Transform wheelTransform)
+
+    void UpdateWheelPose(WheelCollider collider, Transform wheelTransform)
     {
         collider.GetWorldPose(out Vector3 position, out Quaternion rotation);
         wheelTransform.position = position;
         wheelTransform.rotation = rotation;
     }
 
+    // The following methods (Reverse, StopBrakeSound, StopReverseSound, RecoverFromCrash, Brake)
+    // seem to be remnants from a non-WheelCollider based implementation.
+    // With WheelColliders, braking and reverse are typically handled through
+    // brakeTorque and negative motorTorque. Consider if you need these.
+
     void Reverse()
     {
+        // Consider using negative motorTorque with WheelColliders instead
         float currentReverseSpeed = -Vector3.Dot(rb.linearVelocity, transform.forward);
         if (currentReverseSpeed < reverseSpeed)
         {
-            Vector3 reverseDirection = -transform.forward;
-            rb.AddForceAtPosition(reverseDirection * reverseAccelerationMultiplier * Mathf.Abs(input.y), (rearRightWheel.position + rearLeftWheel.position) / 2f, ForceMode.Acceleration);
-            rb.AddForceAtPosition(reverseDirection * reverseAccelerationMultiplier * Mathf.Abs(input.y), (frontRightWheel.position + frontLeftWheel.position) / 2f, ForceMode.Acceleration);
+            rearRightCollider.motorTorque = -Mathf.Abs(inputVertical) * maxMotorTorque * reverseAccelerationMultiplier;
+            rearLeftCollider.motorTorque = -Mathf.Abs(inputVertical) * maxMotorTorque * reverseAccelerationMultiplier;
         }
 
-        if (carReverseAS != null && !carReverseAS.isPlaying)
+        if (carReverseAS != null && !carReverseAS.isPlaying && inputVertical < 0 && currentSpeed < 5f) // Play when trying to reverse at low speed
         {
             carReverseAS.Play();
+        }
+        else if (carReverseAS != null && carReverseAS.isPlaying && inputVertical >= 0)
+        {
+            carReverseAS.Stop();
         }
     }
 
     void StopBrakeSound()
     {
-        if (carBrakeAS != null && carBrakeAS.isPlaying)
+        if (carBrakeAS != null && carBrakeAS.isPlaying && !isBraking)
         {
             carBrakeAS.Stop();
         }
@@ -304,7 +287,7 @@ void UpdateWheelPose(WheelCollider collider, Transform wheelTransform)
 
     void StopReverseSound()
     {
-        if (carReverseAS != null && carReverseAS.isPlaying)
+        if (carReverseAS != null && carReverseAS.isPlaying && inputVertical >= 0)
         {
             carReverseAS.Stop();
         }
@@ -326,23 +309,24 @@ void UpdateWheelPose(WheelCollider collider, Transform wheelTransform)
 
     void Brake()
     {
+        // Braking is now handled in HandleMovement using brakeTorque on WheelColliders
         if (!brakingEnabled) return;
 
-        Vector3 brakeDirection = -rb.linearVelocity.normalized;
-        rb.AddForceAtPosition(brakeDirection * breakMultiplier * Mathf.Abs(input.y), (frontRightWheel.position + frontLeftWheel.position) / 2f, ForceMode.Acceleration);
-        rb.AddForceAtPosition(brakeDirection * breakMultiplier * Mathf.Abs(input.y), (rearRightWheel.position + rearLeftWheel.position) / 2f, ForceMode.Acceleration);
+        float brakeTorque = maxBrakeTorque * Mathf.Abs(inputVertical);
+        frontRightCollider.brakeTorque = brakeTorque;
+        frontLeftCollider.brakeTorque = brakeTorque;
+        rearRightCollider.brakeTorque = brakeTorque;
+        rearLeftCollider.brakeTorque = brakeTorque;
 
-        if (carBrakeAS != null && rb.linearVelocity.magnitude > brakeSoundThreshold && !carBrakeAS.isPlaying)
+        if (carBrakeAS != null && rb.linearVelocity.magnitude > brakeSoundThreshold && !carBrakeAS.isPlaying && isBraking)
         {
             carBrakeAS.Play();
         }
+        else if (carBrakeAS != null && carBrakeAS.isPlaying && !isBraking)
+        {
+            carBrakeAS.Stop();
+        }
     }
-
-    // public void SetInput(Vector2 inputVector)
-    // {
-    //     if (isCrashed) return;
-    //     input = Vector2.ClampMagnitude(inputVector, 1f);
-    // }
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -389,45 +373,74 @@ void UpdateWheelPose(WheelCollider collider, Transform wheelTransform)
         Gizmos.color = Color.green;
         Gizmos.DrawLine(transform.position, transform.position - Vector3.up * groundCheckDistance);
     }
- 
 
-void UpdateCarAudio()
-{
-    if (!isPlayer || carEngineAS == null) return;
-
-    // Get average RPM from all powered wheels
-    float averageRPM = (frontLeftCollider.rpm + frontRightCollider.rpm + 
-                       rearLeftCollider.rpm + rearRightCollider.rpm) / 4f;
-
-    // Only play engine sound if wheels are moving significantly
-    if (Mathf.Abs(averageRPM) > minRPMForSound)
+    void UpdateCarAudio()
     {
-        if (!carEngineAS.isPlaying)
+        if (!isPlayer || carEngineAS == null) return;
+
+        // Get average RPM from all powered wheels
+        float averageRPM = (frontLeftCollider.rpm + frontRightCollider.rpm +
+                           rearLeftCollider.rpm + rearRightCollider.rpm) / 4f;
+
+        // Only play engine sound if wheels are moving significantly
+        if (Mathf.Abs(averageRPM) > minRPMForSound)
         {
-            carEngineAS.Play();
+            if (!carEngineAS.isPlaying)
+            {
+                carEngineAS.Play();
+            }
+
+            // Calculate pitch based on RPM (absolute value)
+            float rpmRatio = Mathf.Clamp01(Mathf.Abs(averageRPM) / 5000f);
+            float targetPitch = Mathf.Lerp(minEnginePitch, maxEnginePitch, rpmRatio);
+            carEngineAS.pitch = Mathf.Lerp(carEngineAS.pitch, targetPitch, Time.deltaTime * engineSoundFadeSpeed);
+
+            // Fade in volume
+            carEngineAS.volume = Mathf.Lerp(carEngineAS.volume, originalEngineVolume, Time.deltaTime * engineSoundFadeSpeed);
+        }
+        else
+        {
+            // Fade out volume when not moving
+            carEngineAS.volume = Mathf.Lerp(carEngineAS.volume, 0, Time.deltaTime * engineSoundFadeSpeed);
+
+            // Stop completely when volume is very low
+            if (carEngineAS.volume < 0.05f)
+            {
+                carEngineAS.Stop();
+            }
         }
 
-        // Calculate pitch based on RPM (absolute value)
-        float rpmRatio = Mathf.Clamp01(Mathf.Abs(averageRPM) / 5000f);
-        float targetPitch = Mathf.Lerp(minEnginePitch, maxEnginePitch, rpmRatio);
-        carEngineAS.pitch = Mathf.Lerp(carEngineAS.pitch, targetPitch, Time.deltaTime * engineSoundFadeSpeed);
-        
-        // Fade in volume
-        carEngineAS.volume = Mathf.Lerp(carEngineAS.volume, originalEngineVolume, Time.deltaTime * engineSoundFadeSpeed);
-    }
-    else
-    {
-        // Fade out volume when not moving
-        carEngineAS.volume = Mathf.Lerp(carEngineAS.volume, 0, Time.deltaTime * engineSoundFadeSpeed);
-        
-        // Stop completely when volume is very low
-        if (carEngineAS.volume < 0.05f)
+        // Handle reverse sound
+        if (carReverseAS != null)
         {
-            carEngineAS.Stop();
+            if (inputVertical < 0 && currentSpeed < 5f && Mathf.Abs(averageRPM) > minRPMForSound)
+            {
+                if (!carReverseAS.isPlaying)
+                {
+                    carReverseAS.Play();
+                }
+            }
+            else if (carReverseAS != null && carReverseAS.isPlaying && inputVertical >= 0)
+            {
+                carReverseAS.Stop();
+            }
+        }
+
+        // Handle brake sound
+        if (carBrakeAS != null)
+        {
+            if (isBraking && rb.linearVelocity.magnitude > brakeSoundThreshold && !carBrakeAS.isPlaying)
+            {
+                carBrakeAS.Play();
+            }
+            else if (carBrakeAS != null && carBrakeAS.isPlaying && !isBraking)
+            {
+                carBrakeAS.Stop();
+            }
         }
     }
-}
-     void FadeOutCarAudio()
+
+    void FadeOutCarAudio()
     {
         if (!isPlayer)
             return;
@@ -445,4 +458,4 @@ void UpdateCarAudio()
             carBrakeAS.volume = Mathf.Lerp(carBrakeAS.volume, 0, Time.deltaTime * 10);
         }
     }
-}
+} 

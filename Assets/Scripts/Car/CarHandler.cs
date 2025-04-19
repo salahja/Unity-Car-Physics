@@ -66,8 +66,23 @@ public class CarHandler : MonoBehaviour
     // [Previous variables remain the same...]
     private float originalEngineVolume; // Store original engine volume
     private bool brakingEnabled = true; // New flag to control braking
+
+    // Add this to your CarHandler.cs script
+[Header("Coin Detection")]
+[SerializeField] private BoxCollider coinTriggerCollider; // Assign the body's BoxCollider in Inspector
+
     void Start()
     {
+    if (coinTriggerCollider != null)
+    {
+        coinTriggerCollider.isTrigger = true;
+    }
+    else
+    {
+        Debug.LogError("Assign the Body's BoxCollider as Coin Trigger in Inspector!");
+    }
+
+
         isPlayer = CompareTag("Player");
         if (isPlayer)
         {
@@ -93,6 +108,8 @@ public class CarHandler : MonoBehaviour
 
     void Update()
     {
+
+          Debug.Log("Coin hit by: update");
         if (isCrashed)
         {
             crashTimer += Time.deltaTime;

@@ -581,8 +581,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   sectionPrefabs:
-  - {fileID: 5424874180808224890, guid: cfb74b6daa0b315d48faf6e0f4e77e5d, type: 3}
-  - {fileID: 2973831127201245777, guid: d623fb12fe553de5f9b5599adfb9f266, type: 3}
+  - {fileID: 6144120695069546575, guid: ed2de01de909a33f2bc485c83a1c07e7, type: 3}
+  - {fileID: 2442607971916734591, guid: fe5146e71b63f102baa2e8f8740bcb7e, type: 3}
   - {fileID: 7363243455666698957, guid: c99cbe9ddbc1ac5b5835a6214ebed423, type: 3}
   virtualCamera: {fileID: 0}
   playerCar: {fileID: 8036059105427303271}
@@ -879,7 +879,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 7912277562426226592, guid: 11a899f08dd40ca3badba0c9ff5feda4, type: 2}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: ee45cfbf1a0071b49b6a7386a933cd4e, type: 3}
   m_Resource: {fileID: 8300000, guid: ee45cfbf1a0071b49b6a7386a933cd4e, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
